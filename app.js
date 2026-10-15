@@ -17,6 +17,7 @@ const ampAuth = new AlightMotionAuthBrowser();
 let activeTabName = 'dashboard';
 let verifiedEmailTemp = '';
 let historyLogs = [];
+let totalVisitorsCount = 0; // Menampung jumlah pengunjung terpisah
 let app, db, auth, userId = null;
 
 let startTime = localStorage.getItem('ayaka_uptime_start');
@@ -113,6 +114,17 @@ window.handleVerifyAndApply = async function() {
             senderId: userId
         };
 
+        if (supabaseClient) {
+            try {
+                const { error } = await supabaseClient.from('activations').insert([logData]);
+                if (!error) {
+                    await fetchSupabaseActivations();
+                }
+            } catch (supErr) {
+                console.warn("Supabase insert note:", supErr);
+            }
+        }
+
         if (db && userId) {
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'activations'), logData);
@@ -121,18 +133,9 @@ window.handleVerifyAndApply = async function() {
             }
         }
 
-        if (supabaseClient) {
-            try {
-                await supabaseClient.from('activations').insert([logData]);
-            } catch (supErr) {
-                console.warn("Supabase insert note:", supErr);
-            }
-        }
-
         document.getElementById('amp-email').value = '';
         document.getElementById('amp-magic-link').value = '';
         switchActivationStep(1);
-        setActiveTab('riwayat');
     } else {
         showToast("Gagal: " + res.error);
     }
@@ -193,19 +196,54 @@ function showToast(msg) {
 }
 
 function updateCounts() {
-    const count = historyLogs.length;
+    const actCount = historyLogs.length;
     const visitorsEl = document.getElementById('visitors-count');
     const actEl = document.getElementById('activations-count');
     const actTotalEl = document.getElementById('act-total-count');
     const actTodayEl = document.getElementById('act-today-count');
 
-    if (visitorsEl) visitorsEl.textContent = count;
-    if (actEl) actEl.textContent = count;
-    if (actTotalEl) actTotalEl.textContent = count;
+    // PENGUNJUNG sekarang membaca jumlah orang yang membuka web
+    if (visitorsEl) visitorsEl.textContent = totalVisitorsCount;
+    
+    // TOTAL AKTIVASI membaca dari riwayat aktivasi
+    if (actEl) actEl.textContent = actCount;
+    if (actTotalEl) actTotalEl.textContent = actCount;
 
     const todayStr = new Date().toDateString();
     const todayCount = historyLogs.filter(h => h.dateString === todayStr).length;
     if (actTodayEl) actTodayEl.textContent = todayCount;
+}
+
+// Fungsi untuk Mencatat & Mengambil Jumlah Pengunjung Web di Supabase
+async function trackVisitor() {
+    if (!supabaseClient) return;
+    try {
+        // Ambil data jumlah pengunjung saat ini
+        const { data, error } = await supabaseClient
+            .from('visitors')
+            .select('count')
+            .eq('id', 1)
+            .single();
+
+        let currentCount = 1;
+        if (!error && data) {
+            currentCount = data.count + 1;
+        }
+
+        // Tambah +1 setiap kali ada session berkunjung
+        const hasVisitedSession = sessionStorage.getItem('ayaka_visited');
+        if (!hasVisitedSession) {
+            sessionStorage.setItem('ayaka_visited', 'true');
+            await supabaseClient.from('visitors').upsert({ id: 1, count: currentCount });
+            totalVisitorsCount = currentCount;
+        } else {
+            totalVisitorsCount = data ? data.count : 1;
+        }
+
+        updateCounts();
+    } catch (e) {
+        console.error("Gagal mencatat pengunjung:", e);
+    }
 }
 
 async function fetchSupabaseActivations() {
@@ -227,7 +265,8 @@ async function fetchSupabaseActivations() {
 }
 
 async function initDatabaseSync() {
-    await fetchSupabaseActivations();
+    await trackVisitor(); // Lacak Pengunjung Web
+    await fetchSupabaseActivations(); // Ambil Riwayat Aktivasi
     setInterval(fetchSupabaseActivations, 5000);
 
     try {
