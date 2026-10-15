@@ -18,8 +18,16 @@ let activeTabName = 'dashboard';
 let verifiedEmailTemp = '';
 let historyLogs = [];
 let totalVisitorsCount = 0;
-let globalUptimeStart = Date.now(); // Inisialisasi awal
 let app, db, auth, userId = null;
+
+// Uptime persisten berbasis localStorage murni agar INSTAN dan TIDAK PERNAH RESET KE 0 saat refresh
+let uptimeStart = localStorage.getItem('ayaka_persistent_uptime');
+if (!uptimeStart) {
+    uptimeStart = Date.now();
+    localStorage.setItem('ayaka_persistent_uptime', uptimeStart);
+} else {
+    uptimeStart = parseInt(uptimeStart, 10);
+}
 
 window.setActiveTab = function(tab) {
     activeTabName = tab;
@@ -204,30 +212,7 @@ function updateCounts() {
     if (actTodayEl) actTodayEl.textContent = todayCount;
 }
 
-// Sinkronisasi Uptime Persisten dari Supabase Database (TIDAK AKAN RESET SAAT REFRESH)
-async function syncUptimeFromDatabase() {
-    if (!supabaseClient) return;
-    try {
-        const { data, error } = await supabaseClient
-            .from('app_uptime')
-            .select('start_timestamp')
-            .eq('id', 1)
-            .single();
-
-        if (!error && data) {
-            globalUptimeStart = Number(data.start_timestamp);
-        } else {
-            // Jika belum ada record uptime di database, buat 1 waktu awal permanen
-            const nowTime = Date.now();
-            await supabaseClient.from('app_uptime').upsert({ id: 1, start_timestamp: nowTime });
-            globalUptimeStart = nowTime;
-        }
-    } catch (e) {
-        console.error("Gagal menyinkronkan uptime:", e);
-    }
-}
-
-// Pelacak Pengunjung Akurat tanpa Refresh Ganda
+// Pelacak Pengunjung Akurat
 async function trackVisitor() {
     if (!supabaseClient) return;
     try {
@@ -273,7 +258,6 @@ async function fetchSupabaseActivations() {
 }
 
 async function initDatabaseSync() {
-    await syncUptimeFromDatabase(); // Sinkronkan Uptime permanen
     await trackVisitor(); 
     await fetchSupabaseActivations(); 
     setInterval(fetchSupabaseActivations, 5000);
@@ -343,8 +327,8 @@ function updateLiveWidgets() {
     const dtEl = document.getElementById('current-date-time');
     if (dtEl) dtEl.textContent = fullDateStr;
 
-    // Menghitung Uptime berdasarkan waktu server global
-    const elapsedSec = Math.floor((Date.now() - globalUptimeStart) / 1000);
+    // Perhitungan Uptime langsung dari memori persisten perangkat (Anti-Reset ke 0)
+    const elapsedSec = Math.floor((Date.now() - uptimeStart) / 1000);
     const mins = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
     const secs = (elapsedSec % 60).toString().padStart(2, '0');
     const uptimeEl = document.getElementById('live-uptime');
