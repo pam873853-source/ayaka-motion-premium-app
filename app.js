@@ -18,8 +18,15 @@ let activeTabName = 'dashboard';
 let verifiedEmailTemp = '';
 let historyLogs = [];
 let totalVisitorsCount = 0;
-let globalServerUptimeStart = Date.now(); // Fallback awal sementara
 let app, db, auth, userId = null;
+
+// SINKRONISASI INSTAN: Ambil dari Cache Lokal Dulu (Mencegah Reset ke 0 saat refresh)
+let localUptimeCache = localStorage.getItem('ayaka_global_uptime_cache');
+let globalServerUptimeStart = localUptimeCache ? parseInt(localUptimeCache, 10) : Date.now();
+
+if (!localUptimeCache) {
+    localStorage.setItem('ayaka_global_uptime_cache', globalServerUptimeStart.toString());
+}
 
 window.setActiveTab = function(tab) {
     activeTabName = tab;
@@ -172,7 +179,7 @@ window.submitBugReport = function() {
     const description = document.getElementById('report-description').value.trim();
 
     if (!description) {
-        showToast("Mohon isi kendala terlebih dahulu!");
+        showToast("Mohon isi deskripsi kendala terlebih dahulu!");
         return;
     }
 
@@ -204,7 +211,7 @@ function updateCounts() {
     if (actTodayEl) actTodayEl.textContent = todayCount;
 }
 
-// Fungsi mengambil atau membuat Uptime Global dari Supabase
+// Sinkronisasi Uptime Global dari Supabase + Update Cache Lokal
 async function syncGlobalUptime() {
     if (!supabaseClient) return;
     try {
@@ -216,11 +223,10 @@ async function syncGlobalUptime() {
 
         if (!error && data) {
             globalServerUptimeStart = Number(data.start_time);
+            localStorage.setItem('ayaka_global_uptime_cache', globalServerUptimeStart.toString());
         } else {
-            // Jika belum ada data sama sekali di database, buat baris baru waktu mulai sekarang
-            const nowTime = Date.now();
+            const nowTime = globalServerUptimeStart;
             await supabaseClient.from('global_uptime').upsert({ id: 1, start_time: nowTime });
-            globalServerUptimeStart = nowTime;
         }
     } catch (e) {
         console.warn("Gagal sinkronisasi uptime global:", e);
@@ -246,7 +252,7 @@ async function fetchSupabaseActivations() {
 }
 
 async function initDatabaseSync() {
-    await syncGlobalUptime(); // Ambil Uptime Global dari database
+    await syncGlobalUptime(); 
     await fetchSupabaseActivations(); 
     setInterval(fetchSupabaseActivations, 5000);
 
@@ -315,7 +321,7 @@ function updateLiveWidgets() {
     const dtEl = document.getElementById('current-date-time');
     if (dtEl) dtEl.textContent = fullDateStr;
 
-    // Perhitungan Uptime berdasarkan waktu server global Supabase (Sama persis di semua perangkat)
+    // Perhitungan Uptime Instan & Sinkron
     const elapsedSec = Math.floor((Date.now() - globalServerUptimeStart) / 1000);
     const mins = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
     const secs = (elapsedSec % 60).toString().padStart(2, '0');
