@@ -17,16 +17,11 @@ const ampAuth = new AlightMotionAuthBrowser();
 let activeTabName = 'dashboard';
 let verifiedEmailTemp = '';
 let historyLogs = [];
-let totalVisitorsCount = 0; // Menampung jumlah pengunjung terpisah
+let totalVisitorsCount = 0;
 let app, db, auth, userId = null;
 
-let startTime = localStorage.getItem('ayaka_uptime_start');
-if (!startTime) {
-    startTime = Date.now();
-    localStorage.setItem('ayaka_uptime_start', startTime);
-} else {
-    startTime = parseInt(startTime, 10);
-}
+// Menggunakan timestamp sesi runtime tanpa localStorage
+let startTime = Date.now();
 
 window.setActiveTab = function(tab) {
     activeTabName = tab;
@@ -202,10 +197,7 @@ function updateCounts() {
     const actTotalEl = document.getElementById('act-total-count');
     const actTodayEl = document.getElementById('act-today-count');
 
-    // PENGUNJUNG sekarang membaca jumlah orang yang membuka web
     if (visitorsEl) visitorsEl.textContent = totalVisitorsCount;
-    
-    // TOTAL AKTIVASI membaca dari riwayat aktivasi
     if (actEl) actEl.textContent = actCount;
     if (actTotalEl) actTotalEl.textContent = actCount;
 
@@ -214,35 +206,26 @@ function updateCounts() {
     if (actTodayEl) actTodayEl.textContent = todayCount;
 }
 
-// Fungsi untuk Mencatat & Mengambil Jumlah Pengunjung Web di Supabase
+// Pelacak Pengunjung Langsung dari Supabase tanpa localStorage
 async function trackVisitor() {
     if (!supabaseClient) return;
     try {
-        // Ambil data jumlah pengunjung saat ini
-        const { data, error } = await supabaseClient
-            .from('visitors')
-            .select('count')
-            .eq('id', 1)
-            .single();
+        // 1. Tambah 1 catatan log kunjungan ke Supabase
+        await supabaseClient
+            .from('visitors_log')
+            .insert([{}]);
 
-        let currentCount = 1;
-        if (!error && data) {
-            currentCount = data.count + 1;
+        // 2. Hitung jumlah total log kunjungan secara akurat dari Supabase
+        const { count, error } = await supabaseClient
+            .from('visitors_log')
+            .select('*', { count: 'exact', head: true });
+
+        if (!error && count !== null) {
+            totalVisitorsCount = count;
+            updateCounts();
         }
-
-        // Tambah +1 setiap kali ada session berkunjung
-        const hasVisitedSession = sessionStorage.getItem('ayaka_visited');
-        if (!hasVisitedSession) {
-            sessionStorage.setItem('ayaka_visited', 'true');
-            await supabaseClient.from('visitors').upsert({ id: 1, count: currentCount });
-            totalVisitorsCount = currentCount;
-        } else {
-            totalVisitorsCount = data ? data.count : 1;
-        }
-
-        updateCounts();
     } catch (e) {
-        console.error("Gagal mencatat pengunjung:", e);
+        console.error("Gagal mencatat pengunjung di Supabase:", e);
     }
 }
 
@@ -265,8 +248,8 @@ async function fetchSupabaseActivations() {
 }
 
 async function initDatabaseSync() {
-    await trackVisitor(); // Lacak Pengunjung Web
-    await fetchSupabaseActivations(); // Ambil Riwayat Aktivasi
+    await trackVisitor(); 
+    await fetchSupabaseActivations(); 
     setInterval(fetchSupabaseActivations, 5000);
 
     try {
