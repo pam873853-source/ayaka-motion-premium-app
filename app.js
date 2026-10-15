@@ -17,9 +17,10 @@ const ampAuth = new AlightMotionAuthBrowser();
 let activeTabName = 'dashboard';
 let verifiedEmailTemp = '';
 let historyLogs = [];
-let totalVisitorsCount = 0; // Menampung jumlah pengunjung terpisah
+let totalVisitorsCount = 0;
 let app, db, auth, userId = null;
 
+// Uptime persisten menggunakan localStorage per perangkat agar tidak mereset saat refresh
 let startTime = localStorage.getItem('ayaka_uptime_start');
 if (!startTime) {
     startTime = Date.now();
@@ -179,7 +180,7 @@ window.submitBugReport = function() {
     const description = document.getElementById('report-description').value.trim();
 
     if (!description) {
-        showToast("Mohon isi deskripsi kendala terlebih dahulu!");
+        showToast("Mohon isi kendala terlebih dahulu!");
         return;
     }
 
@@ -202,10 +203,7 @@ function updateCounts() {
     const actTotalEl = document.getElementById('act-total-count');
     const actTodayEl = document.getElementById('act-today-count');
 
-    // PENGUNJUNG sekarang membaca jumlah orang yang membuka web
     if (visitorsEl) visitorsEl.textContent = totalVisitorsCount;
-    
-    // TOTAL AKTIVASI membaca dari riwayat aktivasi
     if (actEl) actEl.textContent = actCount;
     if (actTotalEl) actTotalEl.textContent = actCount;
 
@@ -214,35 +212,30 @@ function updateCounts() {
     if (actTodayEl) actTodayEl.textContent = todayCount;
 }
 
-// Fungsi untuk Mencatat & Mengambil Jumlah Pengunjung Web di Supabase
+// Pelacak Pengunjung Unik Anti-Refresh Ganda
 async function trackVisitor() {
     if (!supabaseClient) return;
     try {
-        // Ambil data jumlah pengunjung saat ini
-        const { data, error } = await supabaseClient
-            .from('visitors')
-            .select('count')
-            .eq('id', 1)
-            .single();
+        const hasTrackedSession = sessionStorage.getItem('ayaka_tracked_session');
 
-        let currentCount = 1;
-        if (!error && data) {
-            currentCount = data.count + 1;
+        if (!hasTrackedSession) {
+            await supabaseClient
+                .from('visitors_log')
+                .insert([{}]);
+            
+            sessionStorage.setItem('ayaka_tracked_session', 'true');
         }
 
-        // Tambah +1 setiap kali ada session berkunjung
-        const hasVisitedSession = sessionStorage.getItem('ayaka_visited');
-        if (!hasVisitedSession) {
-            sessionStorage.setItem('ayaka_visited', 'true');
-            await supabaseClient.from('visitors').upsert({ id: 1, count: currentCount });
-            totalVisitorsCount = currentCount;
-        } else {
-            totalVisitorsCount = data ? data.count : 1;
-        }
+        const { count, error } = await supabaseClient
+            .from('visitors_log')
+            .select('*', { count: 'exact', head: true });
 
-        updateCounts();
+        if (!error && count !== null) {
+            totalVisitorsCount = count;
+            updateCounts();
+        }
     } catch (e) {
-        console.error("Gagal mencatat pengunjung:", e);
+        console.error("Gagal mencatat pengunjung di Supabase:", e);
     }
 }
 
@@ -265,8 +258,8 @@ async function fetchSupabaseActivations() {
 }
 
 async function initDatabaseSync() {
-    await trackVisitor(); // Lacak Pengunjung Web
-    await fetchSupabaseActivations(); // Ambil Riwayat Aktivasi
+    await trackVisitor(); 
+    await fetchSupabaseActivations(); 
     setInterval(fetchSupabaseActivations, 5000);
 
     try {
