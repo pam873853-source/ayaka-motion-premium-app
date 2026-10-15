@@ -17,16 +17,14 @@ const ampAuth = new AlightMotionAuthBrowser();
 let activeTabName = 'dashboard';
 let verifiedEmailTemp = '';
 let historyLogs = [];
-let totalVisitorsCount = 0;
 let app, db, auth, userId = null;
 
-// Uptime persisten berbasis localStorage murni agar INSTAN dan TIDAK PERNAH RESET KE 0 saat refresh
-let uptimeStart = localStorage.getItem('ayaka_persistent_uptime');
-if (!uptimeStart) {
-    uptimeStart = Date.now();
-    localStorage.setItem('ayaka_persistent_uptime', uptimeStart);
+let startTime = localStorage.getItem('ayaka_uptime_start');
+if (!startTime) {
+    startTime = Date.now();
+    localStorage.setItem('ayaka_uptime_start', startTime);
 } else {
-    uptimeStart = parseInt(uptimeStart, 10);
+    startTime = parseInt(startTime, 10);
 }
 
 window.setActiveTab = function(tab) {
@@ -115,17 +113,6 @@ window.handleVerifyAndApply = async function() {
             senderId: userId
         };
 
-        if (supabaseClient) {
-            try {
-                const { error } = await supabaseClient.from('activations').insert([logData]);
-                if (!error) {
-                    await fetchSupabaseActivations();
-                }
-            } catch (supErr) {
-                console.warn("Supabase insert note:", supErr);
-            }
-        }
-
         if (db && userId) {
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'activations'), logData);
@@ -134,9 +121,18 @@ window.handleVerifyAndApply = async function() {
             }
         }
 
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('activations').insert([logData]);
+            } catch (supErr) {
+                console.warn("Supabase insert note:", supErr);
+            }
+        }
+
         document.getElementById('amp-email').value = '';
         document.getElementById('amp-magic-link').value = '';
         switchActivationStep(1);
+        setActiveTab('riwayat');
     } else {
         showToast("Gagal: " + res.error);
     }
@@ -197,46 +193,19 @@ function showToast(msg) {
 }
 
 function updateCounts() {
-    const actCount = historyLogs.length;
+    const count = historyLogs.length;
     const visitorsEl = document.getElementById('visitors-count');
     const actEl = document.getElementById('activations-count');
     const actTotalEl = document.getElementById('act-total-count');
     const actTodayEl = document.getElementById('act-today-count');
 
-    if (visitorsEl) visitorsEl.textContent = totalVisitorsCount;
-    if (actEl) actEl.textContent = actCount;
-    if (actTotalEl) actTotalEl.textContent = actCount;
+    if (visitorsEl) visitorsEl.textContent = count;
+    if (actEl) actEl.textContent = count;
+    if (actTotalEl) actTotalEl.textContent = count;
 
     const todayStr = new Date().toDateString();
     const todayCount = historyLogs.filter(h => h.dateString === todayStr).length;
     if (actTodayEl) actTodayEl.textContent = todayCount;
-}
-
-// Pelacak Pengunjung Akurat
-async function trackVisitor() {
-    if (!supabaseClient) return;
-    try {
-        const hasTrackedSession = sessionStorage.getItem('ayaka_tracked_session');
-
-        if (!hasTrackedSession) {
-            await supabaseClient
-                .from('visitors_log')
-                .insert([{}]);
-            
-            sessionStorage.setItem('ayaka_tracked_session', 'true');
-        }
-
-        const { count, error } = await supabaseClient
-            .from('visitors_log')
-            .select('*', { count: 'exact', head: true });
-
-        if (!error && count !== null) {
-            totalVisitorsCount = count;
-            updateCounts();
-        }
-    } catch (e) {
-        console.error("Gagal mencatat pengunjung di Supabase:", e);
-    }
 }
 
 async function fetchSupabaseActivations() {
@@ -258,8 +227,7 @@ async function fetchSupabaseActivations() {
 }
 
 async function initDatabaseSync() {
-    await trackVisitor(); 
-    await fetchSupabaseActivations(); 
+    await fetchSupabaseActivations();
     setInterval(fetchSupabaseActivations, 5000);
 
     try {
@@ -327,8 +295,7 @@ function updateLiveWidgets() {
     const dtEl = document.getElementById('current-date-time');
     if (dtEl) dtEl.textContent = fullDateStr;
 
-    // Perhitungan Uptime langsung dari memori persisten perangkat (Anti-Reset ke 0)
-    const elapsedSec = Math.floor((Date.now() - uptimeStart) / 1000);
+    const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
     const mins = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
     const secs = (elapsedSec % 60).toString().padStart(2, '0');
     const uptimeEl = document.getElementById('live-uptime');
