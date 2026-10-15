@@ -1,0 +1,98 @@
+body {
+    background-color: #fef08a; /* Tailwind yellow-200 */
+    background-image: 
+        linear-gradient(to right, rgba(0, 0, 0, 0.05) 2px, transparent 2px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 2px, transparent 2px);
+    background-size: 24px 24px;
+    color: #000000;
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Neo-Brutalism Cards & Components */
+.neo-card {
+    background-color: #ffffff;
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px #000000;
+    border-radius: 16px;
+}
+
+.neo-card-yellow {
+    background-color: #facc15;
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px #000000;
+    border-radius: 16px;
+}
+
+.neo-card-dark {
+    background-color: #18181b;
+    color: #ffffff;
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px #000000;
+    border-radius: 16px;
+}
+
+.neo-btn {
+    background-color: #ffffff;
+    color: #000000;
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px #000000;
+    border-radius: 12px;
+    font-weight: 800;
+    transition: all 0.1s ease;
+    cursor: pointer;
+}
+.neo-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000000;
+}
+
+.neo-btn-yellow {
+    background-color: #facc15;
+    color: #000000;
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px #000000;
+    border-radius: 12px;
+    font-weight: 800;
+    transition: all 0.1s ease;
+    cursor: pointer;
+}
+.neo-btn-yellow:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000000;
+}
+
+.neo-btn-dark {
+    background-color: #18181b;
+    color: #ffffff;
+    border: 3px solid #000000;
+    box-shadow: 4px 4px 0px #000000;
+    border-radius: 12px;
+    font-weight: 800;
+    transition: all 0.1s ease;
+    cursor: pointer;
+}
+.neo-btn-dark:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000000;
+}
+
+.neo-input {
+    background-color: #f4f4f5;
+    border: 3px solid #000000;
+    border-radius: 12px;
+    color: #000000;
+    font-weight: 600;
+}
+.neo-input:focus {
+    background-color: #ffffff;
+    outline: none;
+    box-shadow: 3px 3px 0px #000000;
+}
+
+/* Bottom Nav Neo Style */
+.bottom-nav {
+    background-color: #ffffff;
+    border-top: 3px solid #000000;
+    box-shadow: 0px -4px 0px #000000;
+}

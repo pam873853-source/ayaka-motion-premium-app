@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AYAKA MOTION - Activation Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen flex flex-col justify-between max-w-md mx-auto pb-28 px-4 relative">
+
+    <header class="pt-6 pb-2 flex flex-col gap-2.5 sticky top-0 bg-[#fef08a] z-40">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="setActiveTab('dashboard')">
+                <div class="w-11 h-11 neo-card-yellow flex items-center justify-center font-black text-xl">
+                    M
+                </div>
+                <div class="flex flex-col leading-none">
+                    <span class="font-black text-lg tracking-wider">AYAKA</span>
+                    <span class="font-black text-xs text-black/70 tracking-wider">MOTION</span>
+                </div>
+            </div>
+
+            <div class="neo-card px-3 py-1.5 flex items-center gap-2 text-xs font-black bg-white">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black animate-pulse"></span>
+                <span>ONLINE</span>
+                <span class="text-gray-400">•</span>
+                <span id="header-latency" class="font-mono">12ms</span>
+            </div>
+        </div>
+
+        <!-- Real-Time Metrics Bar -->
+        <div class="grid grid-cols-3 gap-2">
+            <div class="neo-card p-2 bg-white flex flex-col justify-center items-center text-center">
+                <span class="text-[9px] font-black text-gray-500 uppercase tracking-tighter">WAKTU HP</span>
+                <span id="live-clock" class="text-[11px] font-black font-mono tracking-tighter">--:--:--</span>
+            </div>
+            <div class="neo-card p-2 bg-white flex flex-col justify-center items-center text-center">
+                <span class="text-[9px] font-black text-gray-500 uppercase tracking-tighter">BATERAI</span>
+                <span id="live-battery" class="text-[11px] font-black font-mono tracking-tighter flex items-center gap-1">
+                    <i class="fa-solid fa-battery-half text-emerald-600"></i> <span id="battery-text">--%</span>
+                </span>
+            </div>
+            <div class="neo-card p-2 bg-white flex flex-col justify-center items-center text-center">
+                <span class="text-[9px] font-black text-gray-500 uppercase tracking-tighter">UP TIME</span>
+                <span id="live-uptime" class="text-[11px] font-black font-mono tracking-tighter">00:00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- TAB 1: DASHBOARD -->
+    <main id="view-dashboard" class="space-y-4 flex-1 transition-all pt-2">
+        <section class="neo-card p-5 flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-[10px] font-black tracking-widest bg-yellow-300 px-2 py-0.5 border border-black rounded">STATUS AKUN</span>
+                <h2 class="text-2xl font-black pt-1">AKTIF 365 HARI</h2>
+                <p class="text-[10px] font-bold text-gray-500 uppercase">SERVER TERVERIFIKASI</p>
+            </div>
+            <div class="w-20 h-20 neo-card-yellow flex flex-col items-center justify-center text-center p-2">
+                <span class="text-xl font-black">365</span>
+                <span class="text-[8px] font-black tracking-tighter uppercase">HARI</span>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-2 gap-3">
+            <div class="neo-card p-4 space-y-1">
+                <span class="text-[10px] font-black uppercase text-gray-500">PENGUNJUNG</span>
+                <div class="text-2xl font-black font-mono" id="visitors-count">0</div>
+            </div>
+            <div class="neo-card p-4 space-y-1">
+                <span class="text-[10px] font-black uppercase text-gray-500">TOTAL AKTIVASI</span>
+                <div class="text-2xl font-black font-mono" id="activations-count">0</div>
+            </div>
+        </section>
+
+        <button onclick="setActiveTab('aktivasi')" class="w-full neo-btn-dark py-4 text-sm flex items-center justify-center gap-2">
+            <i class="fa-solid fa-bolt text-yellow-400 text-base"></i>
+            <span>Mulai Aktivasi Sekarang</span>
+        </button>
+    </main>
+
+    <!-- TAB 2: AKTIVASI -->
+    <main id="view-aktivasi" class="space-y-4 flex-1 hidden transition-all pt-2">
+        <section class="neo-card p-4 space-y-1">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-black uppercase tracking-wider bg-yellow-300 px-2 py-0.5 border border-black rounded">ACTIVATION MANUAL</span>
+                <span class="text-[10px] font-bold font-mono" id="current-date-time">--/--/-- --:--</span>
+            </div>
+            <h1 class="text-xl font-black mt-1">Kirim Link & Verifikasi Link</h1>
+            <p class="text-xs font-semibold text-gray-600">Kirim magic link ke Gmail lalu verifikasi untuk aktivasi Alight Motion Premium 1 tahun — otomatis, tanpa kata sandi.</p>
+        </section>
+
+        <section class="grid grid-cols-2 gap-3">
+            <div class="neo-card p-4 space-y-1 bg-white">
+                <span class="text-[10px] font-black uppercase text-gray-500">TOTAL AKTIVASI</span>
+                <div class="text-2xl font-black font-mono" id="act-total-count">0</div>
+            </div>
+            <div class="neo-card-yellow p-4 space-y-1">
+                <span class="text-[10px] font-black uppercase text-black">HARI INI</span>
+                <div class="text-2xl font-black font-mono" id="act-today-count">0</div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-2 gap-2">
+            <button type="button" id="tab-btn-kirim" onclick="switchActivationStep(1)" class="neo-btn-dark py-2.5 text-xs flex items-center justify-center gap-2">
+                <i class="fa-solid fa-envelope"></i> Kirim Link
+            </button>
+            <button type="button" id="tab-btn-verifikasi" onclick="switchActivationStep(2)" class="neo-btn py-2.5 text-xs flex items-center justify-center gap-2">
+                <i class="fa-solid fa-shield-halved"></i> Verifikasi
+            </button>
+        </section>
+
+        <section class="neo-card p-5 space-y-4 bg-white">
+            <div id="neo-step-1" class="space-y-3">
+                <span class="text-[10px] font-black uppercase tracking-wider text-gray-400 block">LANGKAH 1 - KIRIM MAGIC LINK</span>
+                <div>
+                    <label class="block text-xs font-black uppercase mb-1">Alamat Gmail</label>
+                    <input type="email" id="amp-email" placeholder="user@gmail.com" class="w-full neo-input px-3.5 py-3 text-xs">
+                </div>
+                <div class="p-3 border-2 border-dashed border-black/20 rounded-xl text-center text-[10px] font-bold text-gray-500 flex items-center justify-center gap-2">
+                    <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+                    Melakukan verifikasi Cloudflare aman
+                </div>
+                <button type="button" onclick="handleSendMagicLink()" id="btn-send-link" class="w-full neo-btn-yellow py-3.5 text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Kirim Magic Link ke Email
+                </button>
+            </div>
+
+            <div id="neo-step-2" class="space-y-3 hidden">
+                <span class="text-[10px] font-black uppercase tracking-wider text-gray-400 block">LANGKAH 2 - VERIFIKASI TOKEN</span>
+                <div>
+                    <label class="block text-xs font-black uppercase mb-1">Magic Link / oobCode</label>
+                    <input type="text" id="amp-magic-link" placeholder="Paste URL atau oobCode di sini..." class="w-full neo-input px-3.5 py-3 text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-black uppercase mb-1">Pilih Paket Premium</label>
+                    <select id="amp-package" class="w-full neo-input px-3.5 py-3 text-xs font-black">
+                        <option value="am.full.sub.annual.19q4">1 Year Premium (365 Hari)</option>
+                        <option value="am.full.sub.monthly">1 Month Premium (30 Hari)</option>
+                    </select>
+                </div>
+                <button type="button" onclick="handleVerifyAndApply()" id="btn-verify-apply" class="w-full neo-btn-yellow py-3.5 text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bolt"></i> Verifikasi & Aktifkan Sekarang
+                </button>
+            </div>
+        </section>
+
+        <section class="neo-card p-5 space-y-2 bg-white">
+            <span class="text-[10px] font-black uppercase tracking-wider text-gray-400 block">STANDBY</span>
+            <div class="text-center py-6 space-y-2">
+                <div class="w-10 h-10 mx-auto neo-card flex items-center justify-center bg-gray-100">
+                    <i class="fa-solid fa-envelope text-gray-400"></i>
+                </div>
+                <p class="text-xs font-black">Belum ada data</p>
+                <p class="text-[10px] text-gray-500 font-semibold">Masukkan Gmail lalu kirim magic link untuk mulai aktivasi.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- TAB 3: RIWAYAT -->
+    <main id="view-riwayat" class="space-y-4 flex-1 hidden transition-all pt-2">
+        <section class="neo-card p-4 flex items-center justify-between">
+            <div>
+                <span class="text-[10px] font-black uppercase tracking-wider bg-yellow-300 px-2 py-0.5 border border-black rounded">LOG AKTIVITAS</span>
+                <h1 class="text-xl font-black mt-1">Riwayat Aktivasi</h1>
+            </div>
+            <button onclick="clearHistoryFeed()" class="neo-btn px-3 py-2 text-xs bg-red-400 hover:bg-red-500">
+                <i class="fa-solid fa-trash-can"></i> Hapus
+            </button>
+        </section>
+
+        <section class="space-y-3" id="history-feed-container">
+            <!-- Dynamic Logs -->
+        </section>
+    </main>
+
+    <!-- TAB 4: LAPORAN / BANTUAN -->
+    <main id="view-laporan" class="space-y-4 flex-1 hidden transition-all pt-2">
+        <section class="neo-card p-4 space-y-1">
+            <span class="text-[10px] font-black uppercase tracking-wider bg-yellow-300 px-2 py-0.5 border border-black rounded">PUSAT BANTUAN</span>
+            <h1 class="text-xl font-black mt-1">Laporan Bug & Kendala</h1>
+            <p class="text-xs font-semibold text-gray-600">Pilih jenis kendala atau hubungi owner langsung via WhatsApp.</p>
+        </section>
+
+        <section class="neo-card p-5 space-y-4 bg-white">
+            <div class="space-y-3">
+                <span class="text-[10px] font-black uppercase tracking-wider text-gray-400 block">FORM LAPORAN KENDALA</span>
+                <div>
+                    <label class="block text-xs font-black uppercase mb-1">Kategori Kendala</label>
+                    <select id="report-category" class="w-full neo-input px-3.5 py-3 text-xs font-black">
+                        <option value="Crash / Force Close">💥 Crash / Force Close</option>
+                        <option value="Magic Link Gagal Terkirim">📧 Magic Link Gagal Terkirim</option>
+                        <option value="Verifikasi Token Gagal">🛡️ Verifikasi Token Gagal</option>
+                        <option value="Akun Belum Premium">⏳ Akun Belum Premium</option>
+                        <option value="Lainnya">❓ Kendala Lainnya</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-black uppercase mb-1">Description (Keterangan)</label>
+                    <textarea id="report-description" rows="4" placeholder="Jelaskan kendala atau error yang Anda alami secara detail..." class="w-full neo-input p-3 text-xs"></textarea>
+                </div>
+                <button type="button" onclick="submitBugReport()" class="w-full neo-btn-yellow py-3.5 text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Kirim Laporan via WhatsApp
+                </button>
+            </div>
+        </section>
+
+        <a href="https://wa.me/6282339430604?text=Halo%20Owner%20AYAKA%20MOTION,%20saya%20ingin%20melaporkan%20kendala." target="_blank" class="neo-card-yellow p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 neo-card flex items-center justify-center text-emerald-600 bg-white">
+                    <i class="fa-brands fa-whatsapp text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-black">Chat Owner Langsung</p>
+                    <p class="text-[10px] font-mono font-bold">+62 823-3943-0604</p>
+                </div>
+            </div>
+            <i class="fa-solid fa-arrow-up-right-from-square text-sm"></i>
+        </a>
+    </main>
+
+    <div id="toast-notif" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 neo-card-dark px-4 py-2.5 font-bold text-xs opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-yellow-400"></i>
+        <span id="toast-message">Notifikasi</span>
+    </div>
+
+    <!-- Bottom Navbar -->
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bottom-nav px-4 py-2.5 z-40">
+        <div class="grid grid-cols-4 gap-2">
+            <button id="nav-dashboard" onclick="setActiveTab('dashboard')" class="neo-btn-yellow py-2 text-[10px] flex flex-col items-center justify-center gap-0.5">
+                <i class="fa-solid fa-house text-sm"></i>
+                <span>Dashboard</span>
+            </button>
+            <button id="nav-aktivasi" onclick="setActiveTab('aktivasi')" class="neo-btn py-2 text-[10px] flex flex-col items-center justify-center gap-0.5">
+                <i class="fa-solid fa-bolt text-sm"></i>
+                <span>Aktivasi</span>
+            </button>
+            <button id="nav-riwayat" onclick="setActiveTab('riwayat')" class="neo-btn py-2 text-[10px] flex flex-col items-center justify-center gap-0.5">
+                <i class="fa-solid fa-clock-rotate-left text-sm"></i>
+                <span>Riwayat</span>
+            </button>
+            <button id="nav-laporan" onclick="setActiveTab('laporan')" class="neo-btn py-2 text-[10px] flex flex-col items-center justify-center gap-0.5">
+                <i class="fa-solid fa-headset text-sm"></i>
+                <span>Bantuan</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- External SDKs & Modular Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="config.js"></script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
