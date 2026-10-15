@@ -20,7 +20,6 @@ let historyLogs = [];
 let totalVisitorsCount = 0;
 let app, db, auth, userId = null;
 
-// Menggunakan timestamp sesi runtime tanpa localStorage
 let startTime = Date.now();
 
 window.setActiveTab = function(tab) {
@@ -206,16 +205,24 @@ function updateCounts() {
     if (actTodayEl) actTodayEl.textContent = todayCount;
 }
 
-// Pelacak Pengunjung Langsung dari Supabase tanpa localStorage
+// Pelacak Pengunjung Akurat: Mencegah penambahan berulang saat REFRESH
 async function trackVisitor() {
     if (!supabaseClient) return;
     try {
-        // 1. Tambah 1 catatan log kunjungan ke Supabase
-        await supabaseClient
-            .from('visitors_log')
-            .insert([{}]);
+        // Cek apakah sesi berkunjung sudah terdaftar di browser saat ini
+        const hasTrackedSession = sessionStorage.getItem('ayaka_tracked_session');
 
-        // 2. Hitung jumlah total log kunjungan secara akurat dari Supabase
+        if (!hasTrackedSession) {
+            // Hanya jika belum pernah di-track di sesi ini, tambahkan +1 ke Supabase
+            await supabaseClient
+                .from('visitors_log')
+                .insert([{}]);
+            
+            // Tandai bahwa sesi ini sudah dihitung
+            sessionStorage.setItem('ayaka_tracked_session', 'true');
+        }
+
+        // Ambil jumlah total pengunjung yang akurat dari Supabase
         const { count, error } = await supabaseClient
             .from('visitors_log')
             .select('*', { count: 'exact', head: true });
