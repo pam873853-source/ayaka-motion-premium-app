@@ -17,15 +17,9 @@ const ampAuth = new AlightMotionAuthBrowser();
 let activeTabName = 'dashboard';
 let verifiedEmailTemp = '';
 let historyLogs = [];
+let totalVisitorsCount = 0;
+let globalServerUptimeStart = Date.now(); // Fallback awal sementara
 let app, db, auth, userId = null;
-
-let startTime = localStorage.getItem('ayaka_uptime_start');
-if (!startTime) {
-    startTime = Date.now();
-    localStorage.setItem('ayaka_uptime_start', startTime);
-} else {
-    startTime = parseInt(startTime, 10);
-}
 
 window.setActiveTab = function(tab) {
     activeTabName = tab;
@@ -113,6 +107,17 @@ window.handleVerifyAndApply = async function() {
             senderId: userId
         };
 
+        if (supabaseClient) {
+            try {
+                const { error } = await supabaseClient.from('activations').insert([logData]);
+                if (!error) {
+                    await fetchSupabaseActivations();
+                }
+            } catch (supErr) {
+                console.warn("Supabase insert note:", supErr);
+            }
+        }
+
         if (db && userId) {
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'activations'), logData);
@@ -121,18 +126,9 @@ window.handleVerifyAndApply = async function() {
             }
         }
 
-        if (supabaseClient) {
-            try {
-                await supabaseClient.from('activations').insert([logData]);
-            } catch (supErr) {
-                console.warn("Supabase insert note:", supErr);
-            }
-        }
-
         document.getElementById('amp-email').value = '';
         document.getElementById('amp-magic-link').value = '';
         switchActivationStep(1);
-        setActiveTab('riwayat');
     } else {
         showToast("Gagal: " + res.error);
     }
@@ -176,7 +172,7 @@ window.submitBugReport = function() {
     const description = document.getElementById('report-description').value.trim();
 
     if (!description) {
-        showToast("Mohon isi deskripsi kendala terlebih dahulu!");
+        showToast("Mohon isi kendala terlebih dahulu!");
         return;
     }
 
@@ -193,19 +189,42 @@ function showToast(msg) {
 }
 
 function updateCounts() {
-    const count = historyLogs.length;
+    const actCount = historyLogs.length;
     const visitorsEl = document.getElementById('visitors-count');
     const actEl = document.getElementById('activations-count');
     const actTotalEl = document.getElementById('act-total-count');
     const actTodayEl = document.getElementById('act-today-count');
 
-    if (visitorsEl) visitorsEl.textContent = count;
-    if (actEl) actEl.textContent = count;
-    if (actTotalEl) actTotalEl.textContent = count;
+    if (visitorsEl) visitorsEl.textContent = totalVisitorsCount;
+    if (actEl) actEl.textContent = actCount;
+    if (actTotalEl) actTotalEl.textContent = actCount;
 
     const todayStr = new Date().toDateString();
     const todayCount = historyLogs.filter(h => h.dateString === todayStr).length;
     if (actTodayEl) actTodayEl.textContent = todayCount;
+}
+
+// Fungsi mengambil atau membuat Uptime Global dari Supabase
+async function syncGlobalUptime() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('global_uptime')
+            .select('start_time')
+            .eq('id', 1)
+            .single();
+
+        if (!error && data) {
+            globalServerUptimeStart = Number(data.start_time);
+        } else {
+            // Jika belum ada data sama sekali di database, buat baris baru waktu mulai sekarang
+            const nowTime = Date.now();
+            await supabaseClient.from('global_uptime').upsert({ id: 1, start_time: nowTime });
+            globalServerUptimeStart = nowTime;
+        }
+    } catch (e) {
+        console.warn("Gagal sinkronisasi uptime global:", e);
+    }
 }
 
 async function fetchSupabaseActivations() {
@@ -227,7 +246,8 @@ async function fetchSupabaseActivations() {
 }
 
 async function initDatabaseSync() {
-    await fetchSupabaseActivations();
+    await syncGlobalUptime(); // Ambil Uptime Global dari database
+    await fetchSupabaseActivations(); 
     setInterval(fetchSupabaseActivations, 5000);
 
     try {
@@ -295,7 +315,8 @@ function updateLiveWidgets() {
     const dtEl = document.getElementById('current-date-time');
     if (dtEl) dtEl.textContent = fullDateStr;
 
-    const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+    // Perhitungan Uptime berdasarkan waktu server global Supabase (Sama persis di semua perangkat)
+    const elapsedSec = Math.floor((Date.now() - globalServerUptimeStart) / 1000);
     const mins = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
     const secs = (elapsedSec % 60).toString().padStart(2, '0');
     const uptimeEl = document.getElementById('live-uptime');
