@@ -20,15 +20,6 @@ let historyLogs = [];
 let totalVisitorsCount = 0;
 let app, db, auth, userId = null;
 
-// Uptime menggunakan localStorage agar tidak pernah reset saat refresh
-let persistentUptimeStart = localStorage.getItem('ayaka_absolute_uptime');
-if (!persistentUptimeStart) {
-    persistentUptimeStart = Date.now();
-    localStorage.setItem('ayaka_absolute_uptime', persistentUptimeStart);
-} else {
-    persistentUptimeStart = parseInt(persistentUptimeStart, 10);
-}
-
 window.setActiveTab = function(tab) {
     activeTabName = tab;
     ['dashboard', 'aktivasi', 'riwayat', 'laporan'].forEach(t => {
@@ -291,6 +282,8 @@ function updateBatteryDisplay() {
 
 function updateLiveWidgets() {
     const now = new Date();
+    
+    // Jam Real-Time
     const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const clockEl = document.getElementById('live-clock');
     if (clockEl) clockEl.textContent = timeStr;
@@ -299,12 +292,11 @@ function updateLiveWidgets() {
     const dtEl = document.getElementById('current-date-time');
     if (dtEl) dtEl.textContent = fullDateStr;
 
-    // Hitung selisih detik dari waktu awal persistent
-    const elapsedSec = Math.floor((Date.now() - persistentUptimeStart) / 1000);
-    const mins = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
-    const secs = (elapsedSec % 60).toString().padStart(2, '0');
+    // Mengganti widget Uptime menjadi TANGGAL Real-Time sesuai perangkat
+    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+    const dateOnlyStr = now.toLocaleDateString('id-ID', options); // Contoh: 16 Okt 2026
     const uptimeEl = document.getElementById('live-uptime');
-    if (uptimeEl) uptimeEl.textContent = `${mins}:${secs}`;
+    if (uptimeEl) uptimeEl.textContent = dateOnlyStr;
 }
 
 updateLiveWidgets();
